@@ -10,6 +10,7 @@ const mopidy = new Mopidy({
 
 const TRACKLIMIT = process.env.TRACKLIMIT || 10;
 const NUMBER_TO_ADD = process.env.NUMBER_TO_ADD || 30;
+const ENABLE_CONSUME = process.env.ENABLE_CONSUME || true;
 
 mopidy.on("state", stateChanged);
 mopidy.on("event", eventTriggered);
@@ -19,6 +20,9 @@ async function fetchNumberOfTracks() {
 }
 
 function addRandomTracks() {
+    if (ENABLE_CONSUME) {
+        mopidy.tracklist.setConsume({value: true});
+    }
     mopidy.library.browse(["local:directory?type=track"]).then(data => {
         const uris = sampleSize(arrayOf('uri', data), NUMBER_TO_ADD);
         console.log(uris);
@@ -27,8 +31,8 @@ function addRandomTracks() {
 }
 
 function stateChanged(state) {
+    console.log('state changed to:', state);
     if (state == 'state:online') {
-        console.log('state: online');
         fetchNumberOfTracks().then(tracks => {
             if (tracks.length < TRACKLIMIT) {
                 console.log("adding Tracks after state:online State Change");
@@ -64,13 +68,4 @@ const arrayOf = (property, items = []) => {
     },
   );
   return array;
-};
-
-const indexToArray = (index, keys) => {
-  if (!index) return [];
-
-  if (keys) {
-    return compact(keys.map((key) => index[key]));
-  }
-  return compact(Object.keys(index).map((key) => index[key]));
 };
